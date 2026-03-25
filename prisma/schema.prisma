@@ -1,0 +1,480 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
+}
+
+// ============================================================
+// CORE ENTITIES
+// ============================================================
+
+model Contact {
+  id                  String               @id @default(cuid())
+  firstName           String
+  lastName            String
+  email               String?
+  phone               String?
+  title               String?
+  linkedinUrl         String?
+  source              String?
+  status              ContactStatus        @default(NEW)
+  ownerId             String?
+  companyId           String?
+  company             Company?             @relation(fields: [companyId], references: [id])
+  deals               Deal[]
+  activities          Activity[]
+  sequenceEnrollments SequenceEnrollment[]
+  tags                ContactTag[]
+  customFields        Json?                @default("{}")
+  enrichmentData      Json?                @default("{}")
+  enrichmentSource    String?
+  lastEnrichedAt      DateTime?
+  enrichmentStatus    EnrichmentStatus     @default(PENDING)
+  leadScore           Int?                 @default(0)
+  createdAt           DateTime             @default(now())
+  updatedAt           DateTime             @updatedAt
+  deletedAt           DateTime?
+
+  @@index([ownerId])
+  @@index([companyId])
+  @@index([email])
+  @@index([status])
+  @@index([createdAt])
+  @@index([lastEnrichedAt])
+}
+
+model Company {
+  id               String   @id @default(cuid())
+  name             String
+  domain           String?  @unique
+  industry         String?
+  headcount        String?
+  annualRevenue    String?
+  fundingStage     String?
+  location         String?
+  description      String?
+  linkedinUrl      String?
+  websiteUrl       String?
+  contacts         Contact[]
+  deals            Deal[]
+  customFields     Json?    @default("{}")
+  enrichmentData   Json?    @default("{}")
+  enrichmentSource String?
+  lastEnrichedAt   DateTime?
+  createdAt        DateTime @default(now())
+  updatedAt        DateTime @updatedAt
+
+  @@index([domain])
+  @@index([industry])
+}
+
+model Deal {
+  id                String        @id @default(cuid())
+  title             String
+  value             Float?
+  currency          String        @default("USD")
+  stageId           String
+  stage             PipelineStage @relation(fields: [stageId], references: [id])
+  pipelineId        String
+  pipeline          Pipeline      @relation(fields: [pipelineId], references: [id])
+  probability       Int?
+  expectedCloseDate DateTime?
+  actualCloseDate   DateTime?
+  closedWon         Boolean?
+  lostReason        String?
+  ownerId           String?
+  contactId         String?
+  contact           Contact?      @relation(fields: [contactId], references: [id])
+  companyId         String?
+  company           Company?      @relation(fields: [companyId], references: [id])
+  activities        Activity[]
+  customFields      Json?         @default("{}")
+  position          Int           @default(0)
+  createdAt         DateTime      @default(now())
+  updatedAt         DateTime      @updatedAt
+  deletedAt         DateTime?
+
+  @@index([stageId])
+  @@index([pipelineId])
+  @@index([ownerId])
+  @@index([contactId])
+  @@index([expectedCloseDate])
+}
+
+// ============================================================
+// PIPELINE CONFIGURATION
+// ============================================================
+
+model Pipeline {
+  id        String          @id @default(cuid())
+  name      String
+  isDefault Boolean         @default(false)
+  stages    PipelineStage[]
+  deals     Deal[]
+  createdAt DateTime        @default(now())
+  updatedAt DateTime        @updatedAt
+}
+
+model PipelineStage {
+  id           String   @id @default(cuid())
+  name         String
+  color        String?
+  order        Int
+  probability  Int?
+  pipelineId   String
+  pipeline     Pipeline @relation(fields: [pipelineId], references: [id], onDelete: Cascade)
+  deals        Deal[]
+  isClosedWon  Boolean  @default(false)
+  isClosedLost Boolean  @default(false)
+  createdAt    DateTime @default(now())
+
+  @@unique([pipelineId, order])
+  @@index([pipelineId])
+}
+
+// ============================================================
+// ACTIVITIES & TIMELINE
+// ============================================================
+
+model Activity {
+  id          String       @id @default(cuid())
+  type        ActivityType
+  subject     String?
+  body        String?      @db.Text
+  direction   String?
+  duration    Int?
+  outcome     String?
+  metadata    Json?        @default("{}")
+  contactId   String?
+  contact     Contact?     @relation(fields: [contactId], references: [id])
+  dealId      String?
+  deal        Deal?        @relation(fields: [dealId], references: [id])
+  userId      String
+  isAutomated Boolean      @default(false)
+  createdAt   DateTime     @default(now())
+  updatedAt   DateTime     @updatedAt
+
+  @@index([contactId, createdAt])
+  @@index([dealId, createdAt])
+  @@index([userId])
+  @@index([type])
+}
+
+// ============================================================
+// EMAIL SEQUENCES
+// ============================================================
+
+model Sequence {
+  id          String               @id @default(cuid())
+  name        String
+  description String?
+  status      SequenceStatus       @default(DRAFT)
+  steps       SequenceStep[]
+  enrollments SequenceEnrollment[]
+  ownerId     String
+  settings    Json?                @default("{}")
+  stats       Json?                @default("{}")
+  createdAt   DateTime             @default(now())
+  updatedAt   DateTime             @updatedAt
+}
+
+model SequenceStep {
+  id         String           @id @default(cuid())
+  sequenceId String
+  sequence   Sequence         @relation(fields: [sequenceId], references: [id], onDelete: Cascade)
+  order      Int
+  type       SequenceStepType
+  subject    String?
+  body       String?          @db.Text
+  waitDays   Int?
+  waitHours  Int?
+  metadata   Json?            @default("{}")
+  createdAt  DateTime         @default(now())
+
+  @@unique([sequenceId, order])
+}
+
+model SequenceEnrollment {
+  id          String           @id @default(cuid())
+  sequenceId  String
+  sequence    Sequence         @relation(fields: [sequenceId], references: [id])
+  contactId   String
+  contact     Contact          @relation(fields: [contactId], references: [id])
+  currentStep Int              @default(0)
+  status      EnrollmentStatus @default(ACTIVE)
+  nextStepAt  DateTime?
+  completedAt DateTime?
+  pausedAt    DateTime?
+  pauseReason String?
+  enrolledBy  String
+  stats       Json?            @default("{}")
+  createdAt   DateTime         @default(now())
+  updatedAt   DateTime         @updatedAt
+
+  @@unique([sequenceId, contactId])
+  @@index([status, nextStepAt])
+}
+
+// ============================================================
+// AUTOMATIONS & ROUTING
+// ============================================================
+
+model AutomationRule {
+  id             String      @id @default(cuid())
+  name           String
+  description    String?
+  isActive       Boolean     @default(false)
+  triggerType    TriggerType
+  triggerConfig  Json
+  conditions     Json?       @default("[]")
+  actionType     ActionType
+  actionConfig   Json
+  executionCount Int         @default(0)
+  lastExecutedAt DateTime?
+  lastError      String?
+  errorCount     Int         @default(0)
+  createdBy      String
+  createdAt      DateTime    @default(now())
+  updatedAt      DateTime    @updatedAt
+
+  @@index([triggerType, isActive])
+}
+
+model RoutingRule {
+  id               String         @id @default(cuid())
+  name             String
+  description      String?
+  isActive         Boolean        @default(false)
+  priority         Int            @default(0)
+  conditions       Json
+  assignmentType   AssignmentType
+  assignmentConfig Json
+  fallbackOwnerId  String?
+  executionCount   Int            @default(0)
+  lastExecutedAt   DateTime?
+  createdBy        String
+  createdAt        DateTime       @default(now())
+  updatedAt        DateTime       @updatedAt
+
+  @@index([isActive, priority])
+}
+
+model RoutingRoundRobinState {
+  id                String   @id @default(cuid())
+  routingRuleId     String   @unique
+  lastAssignedIndex Int      @default(0)
+  lastAssignedAt    DateTime @default(now())
+}
+
+// ============================================================
+// CUSTOM FIELDS
+// ============================================================
+
+model CustomFieldDefinition {
+  id           String     @id @default(cuid())
+  entityType   EntityType
+  fieldName    String
+  label        String
+  fieldType    FieldType
+  options      Json?
+  isRequired   Boolean    @default(false)
+  defaultValue String?
+  order        Int        @default(0)
+  groupName    String?
+  isVisible    Boolean    @default(true)
+  createdBy    String
+  createdAt    DateTime   @default(now())
+  updatedAt    DateTime   @updatedAt
+
+  @@unique([entityType, fieldName])
+  @@index([entityType, order])
+}
+
+// ============================================================
+// AUDIT LOG
+// ============================================================
+
+model AuditLog {
+  id             String   @id @default(cuid())
+  entityType     String
+  entityId       String
+  action         String
+  userId         String?
+  isSystemAction Boolean  @default(false)
+  oldValue       Json?
+  newValue       Json?
+  metadata       Json?    @default("{}")
+  ipAddress      String?
+  createdAt      DateTime @default(now())
+
+  @@index([entityType, entityId, createdAt])
+  @@index([userId, createdAt])
+  @@index([action, createdAt])
+  @@index([createdAt])
+}
+
+// ============================================================
+// WEBHOOKS
+// ============================================================
+
+model WebhookEndpoint {
+  id              String   @id @default(cuid())
+  url             String
+  description     String?
+  secret          String
+  events          String[]
+  isActive        Boolean  @default(true)
+  failureCount    Int      @default(0)
+  lastDeliveredAt DateTime?
+  lastFailedAt    DateTime?
+  lastStatusCode  Int?
+  createdBy       String
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+}
+
+model WebhookDelivery {
+  id            String   @id @default(cuid())
+  endpointId    String
+  event         String
+  payload       Json
+  statusCode    Int?
+  responseBody  String?  @db.Text
+  attemptNumber Int      @default(1)
+  success       Boolean  @default(false)
+  error         String?
+  deliveredAt   DateTime @default(now())
+
+  @@index([endpointId, deliveredAt])
+  @@index([success])
+}
+
+// ============================================================
+// TAGS
+// ============================================================
+
+model Tag {
+  id        String       @id @default(cuid())
+  name      String       @unique
+  color     String?
+  contacts  ContactTag[]
+  createdAt DateTime     @default(now())
+}
+
+model ContactTag {
+  contactId String
+  tagId     String
+  contact   Contact @relation(fields: [contactId], references: [id], onDelete: Cascade)
+  tag       Tag     @relation(fields: [tagId], references: [id], onDelete: Cascade)
+
+  @@id([contactId, tagId])
+}
+
+// ============================================================
+// ENUMS
+// ============================================================
+
+enum ContactStatus {
+  NEW
+  CONTACTED
+  QUALIFIED
+  UNQUALIFIED
+  NURTURING
+  CUSTOMER
+  CHURNED
+}
+
+enum EnrichmentStatus {
+  PENDING
+  ENRICHED
+  FAILED
+  STALE
+}
+
+enum ActivityType {
+  CALL
+  EMAIL
+  NOTE
+  MEETING
+  TASK
+  STAGE_CHANGE
+  FIELD_CHANGE
+  SYSTEM
+}
+
+enum SequenceStatus {
+  DRAFT
+  ACTIVE
+  PAUSED
+  ARCHIVED
+}
+
+enum SequenceStepType {
+  EMAIL
+  WAIT
+  TASK
+  LINKEDIN_VIEW
+  LINKEDIN_CONNECT
+}
+
+enum EnrollmentStatus {
+  ACTIVE
+  PAUSED
+  COMPLETED
+  BOUNCED
+  REPLIED
+  UNSUBSCRIBED
+}
+
+enum TriggerType {
+  CONTACT_CREATED
+  DEAL_CREATED
+  DEAL_STAGE_CHANGED
+  FIELD_CHANGED
+  FORM_SUBMITTED
+  SCHEDULED
+  MANUAL
+}
+
+enum ActionType {
+  ASSIGN_OWNER
+  SEND_SLACK
+  ENROLL_SEQUENCE
+  UPDATE_FIELD
+  SEND_EMAIL
+  CREATE_TASK
+  SEND_WEBHOOK
+  CREATE_ACTIVITY
+}
+
+enum AssignmentType {
+  ROUND_ROBIN
+  WEIGHTED
+  TERRITORY
+  SPECIFIC_USER
+}
+
+enum EntityType {
+  CONTACT
+  COMPANY
+  DEAL
+}
+
+enum FieldType {
+  TEXT
+  TEXTAREA
+  NUMBER
+  DATE
+  DATETIME
+  SELECT
+  MULTI_SELECT
+  BOOLEAN
+  URL
+  EMAIL
+  PHONE
+  CURRENCY
+}

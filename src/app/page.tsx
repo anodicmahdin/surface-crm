@@ -25,13 +25,13 @@ export default async function Home() {
 
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#030306] text-zinc-100">
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_60%_at_50%_-30%,rgba(99,102,241,0.28),transparent)]" />
-      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_80%_100%,rgba(16,185,129,0.12),transparent)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_90%_60%_at_50%_-30%,rgba(37,99,235,0.28),transparent)]" />
+      <div className="pointer-events-none absolute inset-0 bg-[radial-gradient(ellipse_50%_40%_at_80%_100%,rgba(59,130,246,0.12),transparent)]" />
       <div className="pointer-events-none absolute inset-0 bg-[linear-gradient(to_bottom,transparent,rgba(0,0,0,0.4))]" />
 
       <header className="relative z-10 mx-auto flex max-w-6xl items-center justify-between px-4 py-6 sm:px-6 lg:px-8">
         <div className="flex items-center gap-2">
-          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-violet-500 to-indigo-600 shadow-lg shadow-indigo-500/25">
+          <div className="flex h-9 w-9 items-center justify-center rounded-lg bg-gradient-to-br from-blue-500 to-blue-700 shadow-lg shadow-blue-500/25">
             <LayoutGrid className="h-5 w-5 text-white" />
           </div>
           <span className="text-lg font-semibold tracking-tight">Surface CRM</span>
@@ -54,7 +54,7 @@ export default async function Home() {
 
       <main className="relative z-10 mx-auto max-w-6xl px-4 pb-24 pt-12 sm:px-6 lg:px-8 lg:pt-20">
         <div className="mx-auto max-w-3xl text-center">
-          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-violet-200 backdrop-blur">
+          <div className="mb-6 inline-flex items-center gap-2 rounded-full border border-white/10 bg-white/5 px-4 py-1.5 text-xs font-medium text-blue-200 backdrop-blur">
             <Sparkles className="h-3.5 w-3.5" />
             B2B outbound · Pipeline · Sequences
           </div>
@@ -68,7 +68,7 @@ export default async function Home() {
           <div className="mt-10 flex flex-col items-center justify-center gap-4 sm:flex-row">
             <Link
               href="/sign-in"
-              className="inline-flex h-12 min-w-[200px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-violet-600 to-indigo-600 px-8 font-semibold text-white shadow-xl shadow-indigo-500/25 transition hover:from-violet-500 hover:to-indigo-500"
+              className="inline-flex h-12 min-w-[200px] items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-blue-600 to-blue-500 px-8 font-semibold text-white shadow-xl shadow-blue-500/25 transition hover:from-blue-500 hover:to-blue-400"
             >
               Open app
               <ArrowRight className="h-4 w-4" />
@@ -105,7 +105,7 @@ export default async function Home() {
               key={item.title}
               className="rounded-2xl border border-white/10 bg-white/[0.03] p-6 backdrop-blur-sm transition hover:border-white/20 hover:bg-white/[0.06]"
             >
-              <item.icon className="mb-4 h-8 w-8 text-violet-400" />
+              <item.icon className="mb-4 h-8 w-8 text-blue-400" />
               <h3 className="font-semibold text-white">{item.title}</h3>
               <p className="mt-2 text-sm leading-relaxed text-zinc-500">{item.desc}</p>
             </div>

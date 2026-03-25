@@ -28,7 +28,36 @@ A full-featured B2B outbound sales CRM built for modern sales teams. Manage cont
 - **Webhooks** — Outbound webhooks with signing and delivery history
 - **Reports** — Pipeline funnel, KPIs, and deal forecasting
 
-## Getting Started
+## Deploying to Vercel
+
+### 1. Push to GitHub, then import project in Vercel
+
+### 2. Set environment variables in Vercel dashboard
+
+Copy all values from `.env.example`. The most important difference from local dev:
+
+> **`DATABASE_URL` on Vercel must use the Supabase Transaction Pooler (port 6543), not the direct connection.**
+> Found in Supabase → Settings → Database → Connection string → Transaction pooler
+> Format: `postgresql://postgres.[REF]:[PASSWORD]@aws-0-[REGION].pooler.supabase.com:6543/postgres`
+
+`DIRECT_URL` stays as the direct connection (port 5432) — used for migrations only.
+
+### 3. Set build & output settings in Vercel
+
+Vercel will auto-detect Next.js. The build command is already set in `package.json`:
+```
+prisma generate && next build
+```
+
+### 4. Run database migrations locally before deploying
+```bash
+npm run db:push
+```
+Migrations are run locally against your Supabase instance — not on Vercel.
+
+---
+
+## Getting Started (Local)
 
 ### 1. Install dependencies
 

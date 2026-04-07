@@ -2,6 +2,10 @@
   "name": "surface-crm",
   "version": "0.1.0",
   "private": true,
+  "packageManager": "pnpm@10.28.2",
+  "engines": {
+    "node": ">=18.18.0"
+  },
   "scripts": {
     "dev": "WATCHPACK_POLLING=true next dev",
     "dev:clean": "rm -rf .next && WATCHPACK_POLLING=true next dev",

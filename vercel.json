@@ -1,13 +1,21 @@
 {
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "framework": "nextjs",
   "functions": {
     "src/app/api/trpc/[trpc]/route.ts": {
-      "maxDuration": 30
+      "maxDuration": 60
     },
     "src/app/api/inngest/route.ts": {
       "maxDuration": 300
     },
-    "src/app/api/webhooks/**": {
+    "src/app/api/webhooks/inbound/route.ts": {
       "maxDuration": 30
+    },
+    "src/app/api/webhooks/clerk/route.ts": {
+      "maxDuration": 30
+    },
+    "src/app/api/health/route.ts": {
+      "maxDuration": 15
     }
   }
 }
